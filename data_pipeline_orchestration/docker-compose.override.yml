@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+  # MinIO for object storage
+  minio:
+    image: "quay.io/minio/minio:latest"
+    ports:
+      - "9000:9000"   # MinIO API
+      - "9001:9001"   # MinIO Console
+    volumes:
+      - minio_storage:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    profiles: ["extras"]
+
+  # Create buckets at startup
+  createbuckets:
+    image: "quay.io/minio/mc:latest"
+    depends_on:
+      - minio
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      mc mb --ignore-existing myminio/raw-data;
+      mc mb --ignore-existing myminio/processed-data;
+      mc mb --ignore-existing myminio/temp-data;
+      echo 'MinIO buckets created successfully';
+      exit 0;
+      "
+    profiles: ["extras"]
+
+  # ETL worker with embedded DuckDB
+  etl-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.etl
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./scripts:/app/scripts
+      - ./config:/app/config
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      ETL_CHUNK_SIZE: 50000
+    depends_on:
+      - minio
+      - createbuckets
+    restart: always
+    profiles: ["extras"]
+
+  # Monitoring
+  beszel-hub:
+    image: henrygd/beszel:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - beszel_data:/app/data
+    restart: unless-stopped
+    profiles: ["extras"]
+
+volumes:
+  minio_storage:
+  beszel_data:

@@ -1,0 +1,46 @@
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Editor & IDE folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Environment & secret files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Local history folders
+.history/
+
+# Project runtime data
+/data_pipeline_orchestration/logs/
+/data_pipeline_orchestration/data/
+/data_pipeline_orchestration/temp/
+/data_pipeline_orchestration/config/
+/data_pipeline_orchestration/.airflowenv
+/data_pipeline_orchestration/*.log
+
+/datalake/postgres_datalake/backups/
+/datalake/postgres_datalake/*.log
+
+# Docker volumes or compose state
+*.pid
+*.pid.lock
+
+# Misc
+*.log

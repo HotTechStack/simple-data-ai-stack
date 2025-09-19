@@ -1,0 +1,9 @@
+# Core data processing (CHOOSE ONE)
+polars
+
+# Storage
+minio
+
+# Basic utilities
+python-dotenv
+requests

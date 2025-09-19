@@ -1,0 +1,249 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_db_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: always
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - airflow_net
+
+  airflow-webserver:
+    image: apache/airflow:2.7.1
+    container_name: airflow-webserver
+    restart: always
+    command: webserver
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ""
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session"
+      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+      _PIP_ADDITIONAL_REQUIREMENTS: "polars==0.19.12 duckdb==0.9.1 minio==7.1.17 psutil==5.9.5"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    user: "50000:0"
+    depends_on:
+      - postgres
+      - redis
+      - airflow-init
+    networks:
+      - airflow_net
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.1
+    container_name: airflow-scheduler
+    restart: always
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ""
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      _PIP_ADDITIONAL_REQUIREMENTS: "polars==0.19.12 duckdb==0.9.1 minio==7.1.17 psutil==5.9.5"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    user: "50000:0"
+    depends_on:
+      - postgres
+      - redis
+      - airflow-init
+    networks:
+      - airflow_net
+
+  airflow-worker:
+    image: apache/airflow:2.7.1
+    container_name: airflow-worker
+    restart: always
+    command: celery worker
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ""
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: 4
+      _PIP_ADDITIONAL_REQUIREMENTS: "polars==0.19.12 duckdb==0.9.1 minio==7.1.17 psutil==5.9.5"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    user: "50000:0"
+    depends_on:
+      - postgres
+      - redis
+      - airflow-init
+    networks:
+      - airflow_net
+
+  airflow-init:
+    image: apache/airflow:2.7.1
+    container_name: airflow-init
+    user: "0:0"
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R 50000:0 /sources/{logs,dags,plugins}
+        cd /sources
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password admin || echo "User may already exist"
+        echo "Airflow initialization completed"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ""
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      _PIP_ADDITIONAL_REQUIREMENTS: "polars==0.19.12 duckdb==0.9.1 minio==7.1.17"
+    volumes:
+      - .:/sources
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - airflow_net
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_storage:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    networks:
+      - airflow_net
+
+  createbuckets:
+    image: minio/mc:latest
+    container_name: createbuckets
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb --ignore-existing myminio/raw-data;
+      /usr/bin/mc mb --ignore-existing myminio/processed-data;
+      /usr/bin/mc mb --ignore-existing myminio/temp-data;
+      echo 'MinIO buckets created';
+      exit 0;
+      "
+    networks:
+      - airflow_net
+
+  etl-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.etl
+    container_name: etl-worker
+    restart: always
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./scripts:/app/scripts
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+    depends_on:
+      - minio
+      - createbuckets
+    networks:
+      - airflow_net
+
+  duckdb:
+    build:
+      context: .
+      dockerfile: Dockerfile.duckdb
+    container_name: duckdb
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - duckdb_data:/app/data
+      - ./data:/app/input_data
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+    depends_on:
+      - minio
+    networks:
+      - airflow_net
+
+  beszel-hub:
+    image: henrygd/beszel:latest
+    container_name: beszel-hub
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - beszel_data:/app/data
+    networks:
+      - airflow_net
+
+volumes:
+  postgres_db_volume: {}
+  minio_storage: {}
+  beszel_data: {}
+  duckdb_data: {}
+
+networks:
+  airflow_net:
+    driver: bridge

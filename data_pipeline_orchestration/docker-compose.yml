@@ -1,0 +1,80 @@
+# version: "3.8"
+
+# services:
+#   minio:
+#     image: "quay.io/minio/minio:latest"
+#     ports:
+#       - "9000:9000"   # API
+#       - "9001:9001"   # Console
+#     volumes:
+#       - minio_storage:/data
+#     environment:
+#       MINIO_ROOT_USER: minioadmin
+#       MINIO_ROOT_PASSWORD: minioadmin123
+#     command: server /data --console-address ":9001"
+#     restart: unless-stopped
+
+#   createbuckets:
+#     image: "quay.io/minio/mc:latest"
+#     depends_on:
+#       - minio
+#     restart: on-failure
+#     entrypoint: >
+#       /bin/sh -c "
+#       sleep 5;
+#       /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+#       /usr/bin/mc mb --ignore-existing myminio/raw-data;
+#       /usr/bin/mc mb --ignore-existing myminio/processed-data;
+#       /usr/bin/mc mb --ignore-existing myminio/temp-data;
+#       echo 'MinIO buckets created';
+#       exit 0;
+#       "
+
+#   etl-worker:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.etl
+#     volumes:
+#       - ./dags:/opt/airflow/dags
+#       - ./plugins:/opt/airflow/plugins
+#       - ./data:/app/data
+#       - ./logs:/app/logs
+#       - ./scripts:/app/scripts
+#     environment:
+#       MINIO_ENDPOINT: http://minio:9000
+#       MINIO_ACCESS_KEY: minioadmin
+#       MINIO_SECRET_KEY: minioadmin123
+#     depends_on:
+#       - minio
+#       - createbuckets
+#     restart: always
+
+#   duckdb:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.duckdb
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#       - duckdb_data:/app/data
+#       - ./data:/app/input_data
+#     environment:
+#       MINIO_ENDPOINT: http://minio:9000
+#       MINIO_ACCESS_KEY: minioadmin
+#       MINIO_SECRET_KEY: minioadmin123
+#     depends_on:
+#       - minio
+#     restart: always
+
+#   beszel-hub:
+#     image: henrygd/beszel:latest
+#     ports:
+#       - "8090:8090"
+#     volumes:
+#       - beszel_data:/app/data
+#     restart: unless-stopped
+
+# volumes:
+#   minio_storage:
+#   beszel_data:
+#   duckdb_data:
