@@ -1,0 +1,32 @@
+# Dockerfile.marimo - DuckLake-enabled Marimo environment
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create necessary directories
+RUN mkdir -p notebooks data
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Expose Marimo port
+EXPOSE 2718
+
+# Create a default notebook if none exists
+RUN echo 'import marimo as mo\nmo.md("# Welcome to DuckLake Sandbox")' > notebooks/welcome.py
+
+# Start Marimo
+CMD ["marimo", "edit", "--host", "0.0.0.0", "--port", "2718", "--no-token", "notebooks/"]

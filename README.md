@@ -18,6 +18,7 @@ Build and demo modern data and AI platforms without waiting on infrastructure ti
 | --- | --- | --- |
 | `datalake/` | Data infrastructure | PostgreSQL-based lake with connection pooling, Redis cache, no-code access, backups, and uptime monitoring |
 | `data_pipeline_orchestration/` | Data & AI engineering | Apache Airflow bundle with MinIO object storage, customizable ETL worker, resource monitoring, and helper scripts |
+| `ducklake-ai-platform/` | Lakehouse + AI workspace | DuckDB + DuckLake core with Marimo notebooks, MinIO object storage, Postgres metadata, and vector search-ready defaults |
 
 Each subproject ships its own README with full instructions, credentials, and advanced tuning tips. Start there once you pick the module you need.
 
