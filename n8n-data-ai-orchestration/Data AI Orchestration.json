@@ -1,0 +1,381 @@
+{
+  "name": "Data AI Orchestration",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "907660ba-2883-4a49-b37a-175998b7773c",
+      "name": "Weekly Monday 9AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  customer_id,\n  customer_name,\n  email,\n  total_orders,\n  total_spent,\n  last_order_date,\n  customer_segment\nFROM customers \nWHERE last_order_date >= NOW() - INTERVAL '30 days'\nORDER BY total_spent DESC\nLIMIT 100;",
+        "options": {}
+      },
+      "id": "c0412986-dc86-4316-8c5b-1d1a122dc797",
+      "name": "Fetch Active Customers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform and enrich customer data\nconst items = $input.all();\n\nconst enrichedCustomers = items.map(item => {\n  const customer = item.json;\n  \n  // Calculate customer metrics\n  const avgOrderValue = customer.total_spent / customer.total_orders;\n  const daysSinceLastOrder = Math.floor(\n    (new Date() - new Date(customer.last_order_date)) / (1000 * 60 * 60 * 24)\n  );\n  \n  // Determine risk level\n  let riskLevel = 'LOW';\n  if (daysSinceLastOrder > 14 && customer.customer_segment === 'VIP') {\n    riskLevel = 'HIGH';\n  } else if (daysSinceLastOrder > 21) {\n    riskLevel = 'MEDIUM';\n  }\n  \n  return {\n    json: {\n      ...customer,\n      avg_order_value: Math.round(avgOrderValue * 100) / 100,\n      days_since_last_order: daysSinceLastOrder,\n      risk_level: riskLevel,\n      analysis_date: new Date().toISOString().split('T')[0]\n    }\n  };\n});\n\nreturn enrichedCustomers;"
+      },
+      "id": "0953f5c2-98e4-4d1f-aa86-22e8d105a84c",
+      "name": "Transform Customer Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "high-risk",
+              "leftValue": "={{ $json.risk_level }}",
+              "rightValue": "HIGH",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "fd390d90-8d3f-4359-80f1-ae1d6065d003",
+      "name": "Filter High Risk Customers",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and distribute strategies back to customers\nconst aiResponse = $('AI Retention Strategy').first().json.choices[0].message.content;\nconst highRiskCustomers = $('Filter High Risk Customers').all();\n\n// Split AI response by lines and extract strategies\nconst strategies = aiResponse.split('\\n')\n  .filter(line => line.trim().match(/^\\d+\\./)) // Find numbered lines\n  .map(line => line.replace(/^\\d+\\.\\s*/, '').trim()); // Remove numbering\n\n// Match strategies back to customers\nconst results = highRiskCustomers.map((customer, index) => {\n  return {\n    json: {\n      ...customer.json,\n      ai_strategy: strategies[index] || 'No specific strategy generated'\n    }\n  };\n});\n\nreturn results;"
+      },
+      "id": "c0ae717d-de4e-46fe-a057-9552108461cf",
+      "name": "Distribute AI Strategies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": "customer_insights",
+        "options": {}
+      },
+      "id": "322ffb87-dbe2-470b-b80f-3624a8f2428b",
+      "name": "Store AI Insights",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1328,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create summary report for all processed customers\nconst allItems = $input.all();\n\nconst summary = {\n  total_customers: allItems.length,\n  high_risk: allItems.filter(item => item.json.risk_level === 'HIGH').length,\n  medium_risk: allItems.filter(item => item.json.risk_level === 'MEDIUM').length,\n  low_risk: allItems.filter(item => item.json.risk_level === 'LOW').length,\n  avg_order_value: Math.round(\n    allItems.reduce((sum, item) => sum + item.json.avg_order_value, 0) / allItems.length * 100\n  ) / 100,\n  total_revenue: Math.round(\n    allItems.reduce((sum, item) => sum + item.json.total_spent, 0) * 100\n  ) / 100,\n  analysis_date: new Date().toISOString().split('T')[0]\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "0240989e-0fac-4783-9e51-95b5f60f637c",
+      "name": "Create Summary Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "text": "🔍 **Weekly Customer Analysis Complete**\n\n📊 **Summary:**\n• Total Customers Analyzed: {{ $json.total_customers }}\n• High Risk: {{ $json.high_risk }} customers\n• Medium Risk: {{ $json.medium_risk }} customers  \n• Low Risk: {{ $json.low_risk }} customers\n\n💰 **Metrics:**\n• Average Order Value: ${{ $json.avg_order_value }}\n• Total Revenue (30 days): ${{ $json.total_revenue }}\n\n🤖 AI-powered retention strategies generated for high-risk customers.\n📈 Check the dashboard for detailed insights: https://dashboard.company.com/customers",
+        "otherOptions": {}
+      },
+      "id": "949846ae-1c25-4e46-be71-02f9055615dd",
+      "name": "Send Slack Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        384
+      ],
+      "webhookId": "a9afec3b-386f-4aca-8104-64e08ccca4da"
+    },
+    {
+      "parameters": {
+        "fromEmail": "insights@company.com",
+        "toEmail": "team@company.com",
+        "subject": "Weekly Customer Insights Report - {{ $json.analysis_date }}",
+        "emailFormat": "html",
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .header { background: #4CAF50; color: white; padding: 15px; border-radius: 5px; }\n        .metric { background: #f5f5f5; padding: 10px; margin: 10px 0; border-left: 4px solid #4CAF50; }\n        .high-risk { border-left-color: #f44336; }\n        .medium-risk { border-left-color: #ff9800; }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h1>🔍 Weekly Customer Analysis Report</h1>\n        <p>Analysis Date: {{ $json.analysis_date }}</p>\n    </div>\n    \n    <div class=\"metric\">\n        <h3>📊 Customer Breakdown</h3>\n        <ul>\n            <li><strong>Total Analyzed:</strong> {{ $json.total_customers }} customers</li>\n            <li class=\"high-risk\"><strong>High Risk:</strong> {{ $json.high_risk }} customers</li>\n            <li class=\"medium-risk\"><strong>Medium Risk:</strong> {{ $json.medium_risk }} customers</li>\n            <li><strong>Low Risk:</strong> {{ $json.low_risk }} customers</li>\n        </ul>\n    </div>\n    \n    <div class=\"metric\">\n        <h3>💰 Revenue Metrics</h3>\n        <ul>\n            <li><strong>Average Order Value:</strong> ${{ $json.avg_order_value }}</li>\n            <li><strong>Total Revenue (30 days):</strong> ${{ $json.total_revenue }}</li>\n        </ul>\n    </div>\n    \n    <div class=\"metric\">\n        <h3>🤖 AI Insights</h3>\n        <p>Personalized retention strategies have been generated for all high-risk customers using AI analysis.</p>\n        <p><a href=\"https://dashboard.company.com/customers\">View Detailed Dashboard →</a></p>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "47180ae4-c238-4a37-8719-8ecf35842217",
+      "name": "Send Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        384
+      ],
+      "webhookId": "3e4575ee-913b-47cf-b580-2f5f77e8f2a0"
+    },
+    {
+      "parameters": {},
+      "id": "40927444-fb25-4977-987c-b87b5b706615",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "text": "🚨 **Pipeline Error Alert**\n\n❌ **Customer Analysis Pipeline Failed**\n🕐 Time: {{ new Date().toLocaleString() }}\n📍 Failed Step: {{ $json.node }}\n🔍 Error: {{ $json.error }}\n\n🛠️ Please check the n8n execution logs for details.",
+        "otherOptions": {}
+      },
+      "id": "1ca7fd60-fe86-4ade-b167-bb353cd55f34",
+      "name": "Send Error Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        480
+      ],
+      "webhookId": "95fb1d9b-e625-43d8-a87b-9530300aefcd"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trigger-customer-analysis",
+        "options": {
+          "noResponseBody": false
+        }
+      },
+      "id": "d114dd74-182a-4cb7-9c2e-5f412d8c568d",
+      "name": "Manual Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "customer-analysis-webhook"
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "operation": "create",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "name": "Text-SQL",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        16
+      ],
+      "id": "35219ead-2d86-4255-be7a-41a898699816",
+      "name": "Create an assistant",
+      "credentials": {
+        "openAiApi": {
+          "id": "94CWuDYzde2pIe9d",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weekly Monday 9AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Customers": {
+      "main": [
+        [
+          {
+            "node": "Transform Customer Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Customer Data": {
+      "main": [
+        [
+          {
+            "node": "Filter High Risk Customers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Summary Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Distribute AI Strategies": {
+      "main": [
+        [
+          {
+            "node": "Store AI Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Summary Report": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Send Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter High Risk Customers": {
+      "main": [
+        [
+          {
+            "node": "Create an assistant",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an assistant": {
+      "main": [
+        [
+          {
+            "node": "Distribute AI Strategies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7addff1f-271e-458a-8931-bf0fb19a2bfa",
+  "meta": {
+    "instanceId": "d4d6432132240fca67329415db4f031ffb5a7477b7cab45d39045430967efa28"
+  },
+  "id": "BDBQ1QaStaWOJbrK",
+  "tags": [
+    {
+      "name": "Data Pipeline",
+      "id": "fMNo5nUVWXHsWTvv",
+      "createdAt": "2025-09-21T15:12:58.692Z",
+      "updatedAt": "2025-09-21T15:12:58.692Z"
+    },
+    {
+      "name": "AI Insights",
+      "id": "DYfyaq5QuwsScWPY",
+      "createdAt": "2025-09-21T15:12:58.480Z",
+      "updatedAt": "2025-09-21T15:12:58.480Z"
+    },
+    {
+      "name": "Customer Analytics",
+      "id": "mnkPp0QxDOnrwa7l",
+      "createdAt": "2025-09-21T15:12:58.572Z",
+      "updatedAt": "2025-09-21T15:12:58.572Z"
+    }
+  ]
+}

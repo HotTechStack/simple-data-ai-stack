@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.16.0"
-app = marimo.App()
+app = marimo.App(width="full")
 
 
 @app.cell
