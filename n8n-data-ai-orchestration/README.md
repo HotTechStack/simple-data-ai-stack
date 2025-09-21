@@ -3,6 +3,7 @@
 A complete n8n workflow that demonstrates modern data orchestration: **Database → Transformation → AI Analysis → Automated Reporting**
 
 Replace fragile cron jobs with a robust, visual pipeline that your whole team can understand and modify.
+<img width="1299" height="598" alt="n8n_img" src="https://github.com/user-attachments/assets/e928f2ab-1963-4731-956f-f6df49138ae3" />
 
 ## 📋 What This Pipeline Does
 
