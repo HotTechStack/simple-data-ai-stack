@@ -1,0 +1,17 @@
+marimo
+duckdb
+polars
+psycopg2-binary
+redis
+lightrag-hku
+openai
+python-dotenv
+sqlalchemy
+pandas
+pypdf
+python-docx
+python-pptx
+beautifulsoup4
+pytesseract
+pillow
+nest_asyncio

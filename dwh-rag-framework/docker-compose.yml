@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: warehouse
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/warehouse:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  cronicle:
+    image: bluet/cronicle-docker:latest
+    ports:
+      - "3012:3012"
+    volumes:
+      - cronicle_data:/opt/cronicle/data
+      - ./pipelines:/opt/cronicle/plugins/pipelines
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./notebooks:/app/notebooks
+      - ./src:/app/src
+      - ./data:/app/data
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=warehouse
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - REDIS_HOST=redis
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    command: marimo edit --host 0.0.0.0 --port 8080 notebooks/
+
+volumes:
+  postgres_data:
+  cronicle_data:

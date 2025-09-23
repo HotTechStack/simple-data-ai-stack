@@ -44,3 +44,7 @@ ENV/
 
 # Misc
 *.log
+
+
+.env
+.env.local
