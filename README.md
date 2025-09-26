@@ -14,15 +14,16 @@ Build and demo modern data and AI platforms without waiting on infrastructure ti
 ---
 
 ## Repository Guide
-| Directory | Focus | Highlights |
-| --- | --- | --- |
-| `datalake/` | Data infrastructure | PostgreSQL-based lake with connection pooling, Redis cache, no-code access, backups, and uptime monitoring |
-| `data_pipeline_orchestration/` | Data & AI engineering | Apache Airflow bundle with MinIO object storage, customizable ETL worker, resource monitoring, and helper scripts |
-| `ducklake-ai-platform/` | Lakehouse + AI workspace | DuckDB + DuckLake core with Marimo notebooks, MinIO object storage, Postgres metadata, and vector search-ready defaults |
-| `dwh-rag-framework/` | Warehouse-first RAG lab | DuckDB snapshots feeding LightRAG indexing with Marimo notebooks and Cronicle automation for agent validation |
-| `n8n-data-ai-orchestration/` | AI-powered job orchestration | Customer retention workflow that blends SQL, enrichment, OpenAI strategy generation, Slack/email reporting, and failure alerting in n8n |
+| Directory | Focus | Highlights | Docs |
+| --- | --- | --- | --- |
+| `data-Infrastructure/` | Platform foundations | Opinionated essays covering the why behind stack choices—start with hidden pitfalls that derail data platforms before they scale | [The Hidden Problems in Data Infrastructure](data-Infrastructure/The%20Hidden%20Problems%20in%20Data%20Infrastructure.md) |
+| `datalake/` | Data infrastructure | PostgreSQL-based lake with connection pooling, Redis cache, no-code access, backups, and uptime monitoring | [Postgres Lake README](datalake/postgres_datalake/README.md) |
+| `data_pipeline_orchestration/` | Data & AI engineering | Apache Airflow bundle with MinIO object storage, customizable ETL worker, resource monitoring, and helper scripts | [Airflow Stack README](data_pipeline_orchestration/README.md) |
+| `ducklake-ai-platform/` | Lakehouse + AI workspace | DuckDB + DuckLake core with Marimo notebooks, MinIO object storage, Postgres metadata, and vector search-ready defaults | [DuckLake README](ducklake-ai-platform/README.md) |
+| `dwh-rag-framework/` | Warehouse-first RAG lab | DuckDB snapshots feeding LightRAG indexing with Marimo notebooks and Cronicle automation for agent validation | [RAG Framework README](dwh-rag-framework/README.md) |
+| `n8n-data-ai-orchestration/` | AI-powered job orchestration | Customer retention workflow that blends SQL, enrichment, OpenAI strategy generation, Slack/email reporting, and failure alerting in n8n | [n8n Flow README](n8n-data-ai-orchestration/README.md) |
 
-Each subproject ships its own README with full instructions, credentials, and advanced tuning tips. Start there once you pick the module you need.
+Pair the conceptual deep dives with the hands-on stack READMEs: skim `data-Infrastructure/` to understand the platform philosophy, then jump into the stack directory that matches your next experiment for deployment steps and credentials.
 
 ---
 

@@ -1,0 +1,2 @@
+# Run ticket summary every day at 9:00 AM
+0 9 * * * /usr/bin/python3 /app/cron/cron_pipeline.py

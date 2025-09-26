@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install temporal SDK
+RUN pip install temporalio psycopg2-binary requests openai
+
+# Copy application files
+COPY temporal/ ./temporal/
+COPY core/ ./core/
+
+CMD ["python", "temporal/worker.py"]

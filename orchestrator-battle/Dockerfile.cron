@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+# Install cron
+RUN apt-get update && apt-get install -y cron && apt-get clean
+
+# Install Python dependencies
+COPY core/requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
+
+# Setup cron
+COPY cron/crontab /etc/cron.d/ticket-summary
+RUN chmod 0644 /etc/cron.d/ticket-summary
+RUN crontab /etc/cron.d/ticket-summary
+
+# Create log file
+RUN touch /var/log/cron.log
+
+WORKDIR /app
+
+# Start cron and follow logs
+CMD cron && tail -f /var/log/cron.log
