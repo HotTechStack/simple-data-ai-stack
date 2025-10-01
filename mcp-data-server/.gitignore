@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+uploads/
+data/
+*.csv
+*.json
+*.xlsx
+*.parquet
+.DS_Store
+*.log

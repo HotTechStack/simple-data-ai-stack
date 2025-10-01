@@ -22,6 +22,7 @@ Build and demo modern data and AI platforms without waiting on infrastructure ti
 | `ducklake-ai-platform/` | Lakehouse + AI workspace | DuckDB + DuckLake core with Marimo notebooks, MinIO object storage, Postgres metadata, and vector search-ready defaults | [DuckLake README](ducklake-ai-platform/README.md) |
 | `dwh-rag-framework/` | Warehouse-first RAG lab | DuckDB snapshots feeding LightRAG indexing with Marimo notebooks and Cronicle automation for agent validation | [RAG Framework README](dwh-rag-framework/README.md) |
 | `n8n-data-ai-orchestration/` | AI-powered job orchestration | Customer retention workflow that blends SQL, enrichment, OpenAI strategy generation, Slack/email reporting, and failure alerting in n8n | [n8n Flow README](n8n-data-ai-orchestration/README.md) |
+| `mcp-data-server/` | Universal data loader MCP | Format-agnostic FastAPI server with auto-detect parsers, DuckDB SQL querying, and REST endpoints for instant file-to-query workflows | [MCP Data Server README](mcp-data-server/README.md) |
 
 Pair the conceptual deep dives with the hands-on stack READMEs: skim `data-Infrastructure/` to understand the platform philosophy, then jump into the stack directory that matches your next experiment for deployment steps and credentials.
 
