@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-agent-sdk"
+version = "0.1.0"
+description = "Data Engineering Agent SDK"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+dependencies = [
+    "anyio>=4.0.0",
+    "pydantic>=2.0.0",
+    "duckdb>=0.9.0",
+    "polars>=0.19.0",
+    "httpx>=0.25.0",
+    "click>=8.1.0",
+    "pyarrow>=12.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+data-agent = "data_agent_sdk.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
