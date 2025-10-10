@@ -81,11 +81,3 @@ Have an idea or internal stack you want to share? Contributions are welcome—op
 
 ## License
 Unless otherwise stated in a subdirectory, content is provided as-is for educational and production experimentation. Review upstream container licenses before deploying in regulated environments.
-
----
-
-## Dataengineering Dashboard Vision
-- **Dashboards that talk back:** Pair Grafana, Prometheus, and the CUA browser agent so operators ask questions in natural language and get root-cause context without hunting through panels.
-- **Every metric, one conversation:** Let the agent correlate pipeline health, ETL runtimes, and freshness checks, surfacing anomalies and remediation steps in a single chat.
-- **Ship faster loops:** Keep Docker-first workflows—`docker-compose up`, `make agent`, or local `uv` installs—so teams iterate on insights, not YAML plumbing.
-- **Extend across stacks:** Point the agent at production Grafana, swap Anthropic for OpenAI or local models, and stream findings into Slack to keep your data platform observability living conversation-first.
