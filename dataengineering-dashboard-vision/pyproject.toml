@@ -1,0 +1,25 @@
+[project]
+name = "cua-dashboard-agent"
+version = "0.1.0"
+description = "AI agents reading data dashboards with CUA"
+requires-python = ">=3.11"
+dependencies = [
+    "cua-agent[anthropic]>=0.1.9",
+    "cua-computer>=0.4.4",
+    "anthropic>=0.34.0",
+    "openai>=1.40.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "pillow>=10.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]

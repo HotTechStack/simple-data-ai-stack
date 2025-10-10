@@ -1,0 +1,7 @@
+cua-agent[anthropic]==0.1.9
+cua-computer==0.4.4
+anthropic>=0.34.0
+openai>=1.40.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pillow>=10.0.0
