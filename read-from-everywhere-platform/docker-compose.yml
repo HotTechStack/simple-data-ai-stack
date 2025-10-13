@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    command: -c port=5433
+    environment:
+      POSTGRES_DB: metadata
+      POSTGRES_USER: metadata
+      POSTGRES_PASSWORD: metadata
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5433:5433"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:RELEASE.2024-05-28T17-19-04Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  mock-api:
+    build: ./mock_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  ingestion-worker:
+    build: ./ingestion
+    depends_on:
+      - postgres
+      - redis
+      - minio
+      - mock-api
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      REDIS_QUEUE_NAME: ingestion-jobs
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5433
+      POSTGRES_USER: metadata
+      POSTGRES_PASSWORD: metadata
+      POSTGRES_DB: metadata
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_REGION: us-east-1
+      MINIO_SECURE: "false"
+      MINIO_RAW_BUCKET: raw
+      MINIO_PROCESSED_BUCKET: processed
+      MINIO_DEAD_LETTER_BUCKET: dead-letter
+      SCHEDULE_INTERVAL_SECONDS: 120
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data:/app/data:ro
+    command: python -m app.worker
+
+  ingestion-scheduler:
+    build: ./ingestion
+    depends_on:
+      - redis
+      - mock-api
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      REDIS_QUEUE_NAME: ingestion-jobs
+      SCHEDULE_INTERVAL_SECONDS: 300
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data:/app/data:ro
+    command: python -m app.scheduler
+
+  webhook:
+    build: ./ingestion
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      REDIS_QUEUE_NAME: ingestion-jobs
+      LOG_LEVEL: INFO
+    command: uvicorn app.webhook:app --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
+
+  duckdb:
+    image: ghcr.io/duckdb/duckdb:latest
+    command: tail -f /dev/null
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL_S3: http://minio:9000
+    volumes:
+      - ./data:/data:ro
+
+volumes:
+  pg_data:
+  minio_data:
