@@ -360,17 +360,3 @@ Check dead letter queue:
 ```bash
 docker-compose exec postgres psql -U streaming_user -d streaming -c "SELECT * FROM dead_letter_queue ORDER BY failed_at DESC LIMIT 10;"
 ```
-
-## License
-
-MIT
-
-## Contributing
-
-PRs welcome! This is a learning project showing how Python can handle streaming workloads.
-
-## Learn More
-
-- [Redis Streams](https://redis.io/docs/data-types/streams/)
-- [asyncpg](https://github.com/MagicStack/asyncpg)
-- [uv](https://github.com/astral-sh/uv)
