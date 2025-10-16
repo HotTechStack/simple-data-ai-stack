@@ -25,6 +25,7 @@ Build and demo modern data and AI platforms without waiting on infrastructure ti
 | `n8n-data-ai-orchestration/` | AI-powered job orchestration | Customer retention workflow that blends SQL, enrichment, OpenAI strategy generation, Slack/email reporting, and failure alerting in n8n | [n8n Flow README](n8n-data-ai-orchestration/README.md) |
 | `mcp-data-server/` | Universal data loader MCP | Format-agnostic FastAPI server with auto-detect parsers, DuckDB SQL querying, and REST endpoints for instant file-to-query workflows | [MCP Data Server README](mcp-data-server/README.md) |
 | `data-agent-sdk/` | Data engineering agent SDK | Minimal SDK for building data agents with SQL/Polars tools, governance hooks, lineage tracking, and MCP server support in ~2,000 lines | [Data Agent SDK README](data-agent-sdk/README.md) |
+| `python-redis-streaming/` | Streaming ingestion engine | Async Python + Redis Streams + Postgres stack with uv tooling, DLQ handling, and CLI helpers for monitoring and benchmarks | [Python Redis Streaming README](python-redis-streaming/README.md) |
 
 Pair the conceptual deep dives with the hands-on stack READMEs: skim `data-Infrastructure/` to understand the platform philosophy, then jump into the stack directory that matches your next experiment for deployment steps and credentials.
 
