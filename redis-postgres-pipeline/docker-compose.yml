@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: pipeline-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dataeng}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dataeng_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-orders_pipeline}
+      # Enable async I/O (default in Postgres 18)
+      POSTGRES_INITDB_ARGS: "-c shared_buffers=512MB -c effective_cache_size=2GB"
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c maintenance_work_mem=128MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=8MB
+      -c huge_pages=off
+      -c max_worker_processes=4
+      -c max_parallel_workers_per_gather=2
+      -c max_parallel_workers=4
+      -c max_connections=100
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dataeng}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline_network
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: pipeline-pgbouncer
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-dataeng}:${POSTGRES_PASSWORD:-dataeng_secret}@postgres:5432/${POSTGRES_DB:-orders_pipeline}"
+      POOL_MODE: ${PGBOUNCER_POOL_MODE:-transaction}
+      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-800}
+      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-25}
+      MIN_POOL_SIZE: ${PGBOUNCER_MIN_POOL_SIZE:-5}
+      RESERVE_POOL_SIZE: 5
+      SERVER_IDLE_TIMEOUT: 600
+      MAX_DB_CONNECTIONS: 50
+    ports:
+      - "6432:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pipeline_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: pipeline-redis
+    command: >
+      redis-server
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pipeline_network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: pipeline-redis-ui
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - pipeline_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  pipeline_network:
+    driver: bridge
