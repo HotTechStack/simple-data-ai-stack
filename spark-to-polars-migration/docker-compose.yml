@@ -1,0 +1,25 @@
+services:
+  spark-job:
+    build:
+      context: ./spark_job
+    environment:
+      ORDERS_PATH: /opt/project/data/orders.csv
+      SPARK_OUTPUT_PATH: /opt/project/output/spark
+    volumes:
+      - ./data:/opt/project/data:ro
+      - ./output:/opt/project/output
+    profiles:
+      - spark
+
+  polars-job:
+    build:
+      context: ./polars_duckdb_job
+    environment:
+      ORDERS_PATH: /opt/project/data/orders.csv
+      POLARS_OUTPUT_PATH: /opt/project/output/polars
+      DUCKDB_OUTPUT_PATH: /opt/project/output/duckdb
+    volumes:
+      - ./data:/opt/project/data:ro
+      - ./output:/opt/project/output
+    profiles:
+      - polars

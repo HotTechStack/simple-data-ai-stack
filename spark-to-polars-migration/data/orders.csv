@@ -1,0 +1,16 @@
+order_id,customer_id,region,category,order_date,amount
+1001,C001,North,Electronics,2024-01-02,235.67
+1002,C002,West,Home,2024-01-03,89.40
+1003,C001,North,Electronics,2024-01-05,128.80
+1004,C003,South,Apparel,2024-01-07,42.12
+1005,C002,West,Home,2024-01-08,312.55
+1006,C004,East,Grocery,2024-01-09,58.44
+1007,C003,South,Apparel,2024-01-10,440.00
+1008,C005,West,Electronics,2024-01-10,910.32
+1009,C001,North,Home,2024-01-11,78.90
+1010,C004,East,Grocery,2024-01-12,120.00
+1011,C005,West,Home,2024-01-12,45.18
+1012,C006,North,Grocery,2024-01-13,64.22
+1013,C002,West,Electronics,2024-01-13,550.60
+1014,C004,East,Home,2024-01-14,220.77
+1015,C003,South,Apparel,2024-01-15,155.80

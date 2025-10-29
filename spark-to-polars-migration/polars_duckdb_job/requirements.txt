@@ -1,0 +1,2 @@
+duckdb==0.9.2
+polars[pyarrow]==0.20.21
