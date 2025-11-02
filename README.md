@@ -29,6 +29,7 @@ Build and demo modern data and AI platforms without waiting on infrastructure ti
 | `redis-postgres-pipeline/`          | High-performance pipeline        | Production-ready data pipeline with Redis queues, dedup, caching, Postgres 18 async I/O, UNLOGGED staging, materialized views, and Polars — handles 500M records without Spark | [Redis Postgres Pipeline README](redis-postgres-pipeline/README.md)                                                       |
 | `spark-to-polars-migration/`        | Spark-to-single-node rewrite lab | Side-by-side Spark UDF baseline with Polars and DuckDB replacements, Dockerized for benchmarking single-node performance | [Spark-to-Polars README](spark-to-polars-migration/README.md)                                                             |
 | `data-pipeline-security/`           | Data Pipeline Security           | Secrets & Identity | [Data-pipeline-security README](data-pipeline-security/README.md)                                                         |
+| `elasticsearch-vs-vector-search/`   | Search architecture lab          | Hands-on comparison of Elasticsearch keyword search vs pgvector semantic search with hybrid approach, performance benchmarks, and production decision framework | [Elasticsearch vs Vector Search README](elasticsearch-vs-vector-search/README.md)                                         |
 
 Pair the conceptual deep dives with the hands-on stack READMEs: skim `data-Infrastructure/` to understand the platform philosophy, then jump into the stack directory that matches your next experiment for deployment steps and credentials.
 
@@ -66,7 +67,7 @@ The stacks are designed to connect: object storage flows into transformation job
 ---
 
 ## Roadmap Inspiration
-- Vector databases + retrieval-augmented generation demo stack.
+- ✅ Vector databases + search architecture comparison (see `elasticsearch-vs-vector-search/`)
 - Streaming ingestion profile (Kafka/Redpanda + stream processing + materialized views).
 - Notebook & model experimentation workspace with GPU-ready containers.
 - Terraform modules to mirror these blueprints in managed cloud environments.
