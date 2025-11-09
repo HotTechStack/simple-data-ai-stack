@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg_duck_sync_postgres
+    environment:
+      POSTGRES_USER: analyst
+      POSTGRES_PASSWORD: analyst
+      POSTGRES_DB: analytics
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analyst -d analytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  syncer:
+    build:
+      context: ./app
+    container_name: pg_duck_syncer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: analytics
+      POSTGRES_USER: analyst
+      POSTGRES_PASSWORD: analyst
+      POSTGRES_TABLE: subscriptions
+      POSTGRES_PRIMARY_KEY: id
+      DUCKDB_PATH: /app/lake/warehouse.duckdb
+      DUCKDB_TABLE: analytics_subscriptions
+      PARQUET_DIR: /app/parquet
+      STATE_DIR: /app/state
+      BATCH_SIZE: 10000
+      SYNC_INTERVAL_SECONDS: 30
+    volumes:
+      - ./lake:/app/lake
+      - ./parquet:/app/parquet
+      - ./state:/app/state
+    command: ["--loop"]
+
+volumes:
+  postgres_data:

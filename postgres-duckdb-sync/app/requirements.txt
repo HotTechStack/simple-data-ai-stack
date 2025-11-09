@@ -1,0 +1,5 @@
+polars==0.20.29
+duckdb==0.10.2
+psycopg[binary]==3.1.18
+pyarrow==16.1.0
+python-dotenv==1.0.1
