@@ -1,0 +1,9 @@
+polars==0.20.23
+duckdb==0.10.3
+pandera[polars]==0.18.0
+rapidfuzz==3.8.1
+pyarrow==15.0.2
+xlsxwriter==3.2.0
+xlsx2csv==0.8.1
+pandas==2.2.2
+multimethod==1.11
