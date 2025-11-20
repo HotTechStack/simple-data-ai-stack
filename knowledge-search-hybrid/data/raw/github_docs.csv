@@ -1,0 +1,4 @@
+path,body,updated_at,author
+"docs/deploy/payment.md","CLI args for deployment: --service payment --region us-east-1 --strategy canary.","2024-01-10","Sang"
+"docs/search/analysis.md","Explains BM25 + HNSW hybrid scoring and how to switch analyzers.","2024-02-05","Alex"
+"docs/rag/synthesis.md","Shows how the RAG endpoint stitches top docs into an answer using a local LLM.","2024-03-02","Mira"

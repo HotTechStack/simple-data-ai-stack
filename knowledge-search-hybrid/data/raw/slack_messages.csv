@@ -1,0 +1,4 @@
+channel,message,created_at,user
+"#dev-search","Reminder: nightly ETL drops JSONL in /data/processed; indexer picks it up at 2am.","2024-03-08","debra"
+"#dev-infra","Payment deploy doc moved to docs/deploy/payment.md; no more wiki drift.","2024-01-15","chen"
+"#ops","Index rollback is one symlink swap; keep S3 snapshot in sync.","2024-02-20","taylor"

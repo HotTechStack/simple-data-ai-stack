@@ -1,0 +1,8 @@
+.python-version
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+data/processed/
+data/index/
+*.lock
+*.log

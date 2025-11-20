@@ -1,0 +1,59 @@
+meta:
+  name: "knowledge-search-stack"
+  description: "Lightweight hybrid search with Lucene BM25 + local embeddings"
+
+storage:
+  index_dir: "data/index"
+  doc_store: "data/index/doc_store.json"
+  vector_store: "data/index/vector.bin"
+
+data:
+  processed_jsonl: "data/processed/docs.jsonl"
+  id_field: "doc_id"
+
+embedding:
+  model: "BAAI/bge-small-en-v1.5"
+  dimensions: 384
+  batch_size: 32
+  normalize: true
+
+lexical:
+  analyzer: "default" # Tantivy analyzer; keep simple for demo
+  fields:
+    - name: "doc_id"
+      type: "text"
+      stored: true
+    - name: "title"
+      type: "text"
+      stored: true
+    - name: "body"
+      type: "text"
+      stored: true
+    - name: "source"
+      type: "text"
+      stored: true
+    - name: "tags"
+      type: "json"
+      stored: true
+    - name: "service"
+      type: "text"
+      stored: true
+    - name: "updated_at"
+      type: "text"
+      stored: true
+    - name: "author"
+      type: "text"
+      stored: true
+
+hybrid:
+  bm25_k: 10
+  knn_k: 10
+  fusion:
+    # Reciprocal Rank Fusion weights lexical and semantic halves equally
+    k: 60
+    lexical_weight: 0.5
+    semantic_weight: 0.5
+
+autocomplete:
+  fields: ["title", "body"]
+  min_chars: 2

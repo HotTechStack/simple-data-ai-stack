@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  knowledge-search:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+    command: ["uv", "run", "python", "-m", "app.main"]
