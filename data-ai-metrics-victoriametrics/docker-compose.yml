@@ -1,0 +1,138 @@
+# docker-compose.yml
+
+services:
+
+  otel-collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.133.0
+    command: [ "--config=/etc/otel-collector-config.yml" ]
+    ports: [ "4317:4317", "4318:4318" ]
+    configs: [ { source: "otel-collector-config", target: "/etc/otel-collector-config.yml", mode: 0444 } ]
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.128.0
+    ports: [ "8428:8428" ]
+    command: [ "--storageDataPath=/storage", "--opentelemetry.usePrometheusNaming=true" ]
+    volumes: [ "vmdata:/storage" ]
+
+  vmagent:
+    image: victoriametrics/vmagent:v1.128.0
+    ports: [ "8429:8429" ]
+    command:
+      - "--promscrape.config=/etc/prometheus.yml"
+      - "--remoteWrite.url=http://victoriametrics:8428/api/v1/write"
+      - "--httpListenAddr=:8429"
+    configs: [ { source: "prometheus-config", target: "/etc/prometheus.yml", mode: 0444 } ]
+    depends_on: [ victoriametrics ]
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:v1.36.1
+    ports: [ "9428:9428" ]
+    command: [ "--storageDataPath=/vlogs" ]
+    volumes: [ "vldata:/vlogs" ]
+
+  victoriatraces:
+    image: victoriametrics/victoria-traces:v0.4.0
+    ports: [ "10428:10428" ]
+    command: [ "--storageDataPath=/vtraces", "--servicegraph.enableTask=true" ]
+    volumes: [ "vtdata:/vtraces" ]
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    ports: [ "3000:3000" ]
+    volumes:
+      - "grdata:/var/lib/grafana"
+
+configs:
+  otel-collector-config:
+    content: |
+      receivers:
+        otlp:
+          protocols:
+            http:
+              endpoint: "otel-collector:4318"
+              cors:
+                allowed_origins: [ "http://*", "https://*" ]
+      exporters:
+        otlphttp/victoriametrics:
+          endpoint: "http://victoriametrics:8428/opentelemetry"
+          tls:
+            insecure: true
+        otlphttp/victorialogs:
+          logs_endpoint: "http://victorialogs:9428/insert/opentelemetry/v1/logs"
+          tls:
+            insecure: true
+        otlphttp/victoriatraces:
+          traces_endpoint: "http://victoriatraces:10428/insert/opentelemetry/v1/traces"
+          tls:
+            insecure: true
+      service:
+        pipelines:
+          traces: { receivers: [ otlp ], exporters: [ otlphttp/victoriatraces ] }
+          metrics: { receivers: [ otlp ], exporters: [ otlphttp/victoriametrics ] }
+          logs: { receivers: [ otlp ], exporters: [ otlphttp/victorialogs ] }
+  prometheus-config:
+    content: |
+      global:
+        scrape_interval: 30s
+        external_labels:
+          cluster: 'data-pipeline'
+      scrape_configs:
+        - job_name: 'polars-pipeline'
+          static_configs:
+            - targets: ['host.docker.internal:8000']
+              labels:
+                pipeline_name: 'etl_pipeline'
+                environment: 'dev'
+        - job_name: 'data-quality'
+          static_configs:
+            - targets: ['host.docker.internal:8001']
+              labels:
+                pipeline_name: 'quality_checks'
+                environment: 'dev'
+  victoriametrics-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: VictoriaMetrics
+          type: victoriametrics-metrics-datasource
+          uid: victoriametrics
+          access: proxy
+          url: http://victoriametrics:8428
+          isDefault: true
+          jsonData:
+            httpMethod: POST
+  victorialogs-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: VictoriaLogs
+          type: victoriametrics-logs-datasource
+          access: proxy
+          url: http://victorialogs:9428
+  victoriatraces-datasource:
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: VictoriaTraces
+          type: jaeger
+          access: proxy
+          url: http://victoriatraces:10428/select/jaeger
+  dashboard-provisioning:
+    content: |
+      apiVersion: 1
+      providers:
+        - name: 'Pipeline Dashboards'
+          orgId: 1
+          folder: 'Data Pipeline'
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: /etc/grafana/provisioning/dashboards/files
+
+volumes:
+  vmdata: {}
+  vldata: {}
+  vtdata: {}
+  grdata: {}

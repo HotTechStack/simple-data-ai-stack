@@ -1,0 +1,29 @@
+# Core data stack
+duckdb>=1.3.0
+marimo[sql]>=0.9.0
+pandas>=2.0.0
+polars>=1.0.0
+
+# DuckLake and storage
+psycopg2-binary>=2.9.0
+boto3>=1.28.0
+s3fs
+
+# Analytics and visualization  
+plotly>=5.15.0
+altair>=5.0.0
+numpy>=1.24.0
+
+# AI/ML essentials
+openai>=1.0.0
+anthropic>=0.25.0
+sentence-transformers>=3.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+httpx>=0.24.0
+rich>=13.0.0
+traceloop-sdk
+openinference-instrumentation-openai
+opentelemetry-exporter-otlp
+opentelemetry-sdk
